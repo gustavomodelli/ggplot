@@ -1,0 +1,69 @@
+library(tidyverse)
+library(ggsci) ## Temas científicos para o ggplot2
+library(plotly)
+
+data(mpg)
+
+##scarterplot
+ggplot(data = mpg) + geom_point(mapping = aes(x = displ,
+y = hwy)) 
+
+p <- ggplot(data = mpg, aes(x = displ, y = hwy, color = class)) + 
+  geom_point(aes(frame = class)) +
+  scale_color_nejm()+
+  scale_fill_nejm()
+
+## animated
+ggplotly(p)
+
+
+ggplot(data = mpg) + geom_point(mapping = aes(x = displ,
+y = hwy, color = class))+
+  scale_color_jama()+
+  scale_fill_jama()+
+  theme_bw()
+
+##smoth
+ggplot(data = mpg) + geom_smooth(mapping = aes(x = displ,
+y = hwy))
+
+##bloxplot
+ggplot(data = mpg) + geom_boxplot(mapping = aes(x = class,
+y = displ))
+
+##violin
+ggplot(data = mpg) + geom_violin(mapping = aes(x = class,
+y = displ))
+
+##Facet Wrap
+ggplot(data = mpg) + geom_point(mapping = aes(x = displ,
+y = hwy)) + facet_wrap(~ class, nrow = 2)
+
+
+## Library plotly
+df <- data.frame(
+  x = c(1,2,3,4), 
+  y = c(1,2,3,4), 
+  f = c(1,2,3,4)
+)
+
+p <- ggplot(df, aes(x, y)) +
+  geom_point(aes(frame = f))
+
+p <- ggplotly(p)
+
+chart_link = api_create(p, filename="animations-basic")
+chart_link
+
+## mixed Plot
+str(mtcars)
+
+ggplot(data = mtcars, aes(x = factor(carb)))+
+  geom_bar(width = 1)+
+  coord_polar(theta = 'y')
+
+##matrix
+library(GGally)
+
+ggpairs(mtcars[,1:3], aes(color = factor(mtcars$carb)))
+ggparis(mtcars[,1:3])
