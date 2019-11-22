@@ -1,0 +1,29 @@
+library(maps)
+library(tidyverse)
+library(brazilmaps) ##Mapas Brasil
+
+world <- map_data('world')
+
+Brazil <- world %>%
+  filter(region == 'Brazil') %>%
+  group_by(subregion)
+
+data("USArrests")
+head(USArrests)
+arrests <- USArrests
+arrests$region <- tolower(rownames(USArrests))
+head(arrests)
+
+states_map <- map_data("state")
+arrests_map <- left_join(states_map, arrests, by = "region")
+
+ggplot(arrests_map, aes(long, lat, group = group))+
+  geom_polygon(aes(fill = Assault), color = "white")+
+  scale_fill_viridis_c(option = "C")
+
+brazil <- map_data('world',region = 'Brazil')
+map('world','Brazil')
+map.cities(country = 'Brazil')  
+
+mapa <- get_brmap(geo = c("Brazil"))
+str(mapa)
