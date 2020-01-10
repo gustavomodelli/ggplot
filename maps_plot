@@ -1,0 +1,87 @@
+library(tidyverse)
+library(maps)
+library(brazilmaps) ## Brazil
+
+states <- map_data('state')
+states
+
+ggplot(states, aes(long, lat, group = group, fill = region))+
+  geom_polygon()+
+  theme(legend.position = '')
+
+## Mapas Brazileiros
+
+Brazil <- get_brmap(geo = 'State', class = 'data.frame')
+str(Brazil)
+
+Brazil <- Brazil %>% 
+  mutate(
+    id = factor(id),
+    id = fct_recode(id, 
+            'RO' = '11',
+            'AC' = '12',
+            'AM' = '13',
+            'RR' = '14',
+            'PA' = '15',
+            'AP' = '16',
+            'TO' = '17',
+            'MA' = '21',
+            'PI' = '22',
+            'CE' = '23',
+            'RN' = '24',
+            'PB' = '25',
+            'PE' = '26',
+            'AL' = '27',
+            'SE' = '28',
+            'BA' = '29',
+            'MG' = '31',
+            'ES' = '32',
+            'RJ' = '33',
+            'SP' = '35',
+            'PR' = '41',
+            'SC' = '42',
+            'RS' = '43',
+            'MS' = '50',
+            'MT' = '51',
+            'GO' = '52',
+            'DF' = '53'
+                    ))
+
+ggplot(Brazil, aes(long, lat, group = group, fill = id))+
+  geom_polygon()
+
+## Juntar Dados
+tx <- read.csv('2019.csv', dec = '.', sep = ';', stringsAsFactors = FALSE)
+str(tx)
+
+completo <- left_join(Brazil, tx, by = c('id' = 'uf'))
+str(completo)
+
+ggplot(completo, aes(long, lat, group = group, fill = total))+
+  geom_polygon()
+
+
+full <- completo %>% 
+  group_by(id) %>% 
+  summarise(soma = sum(unique(total), na.rm = TRUE), n = n()) %>% 
+  ungroup()
+
+completo <- left_join(completo, full, by = c('id' = 'id'))
+
+##Grafico de número de transplantes por Estado
+
+ggplot(completo, aes(long, lat, group = group, fill = soma))+
+  geom_polygon()+
+  scale_fill_gradient(low = "#56B1F7", high = "#132B43",
+                      space = "Lab", na.value = "grey50", guide = "colourbar",
+                      aesthetics = "fill")
+
+
+# Numero de transplantes por estado
+
+ggplot(completo, aes(long, lat, group = group, fill = soma))+
+  geom_polygon()+
+  scale_fill_viridis_c(option = "plasma", trans = "sqrt",
+                       begin = 0, end = 0.8, alpha = 1)+
+  labs(fill = 'Total Tx', title = 'Atividade de Transplantes no Brasil - 2019')+
+  theme_void()
