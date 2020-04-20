@@ -1,0 +1,24 @@
+library(ggplot2)
+library(ggthemes)
+library(ggsci)
+library(modeldata)
+
+##make a ggplot
+data("car_prices")
+str(car_prices)
+
+
+ggplot(car_prices, aes(Price, Mileage, color = as.factor(Cylinder)))+
+  geom_point()
+
+##Add a theme
+ggplot(car_prices, aes(Price, Mileage, color = as.factor(Cylinder)))+
+  geom_point()+
+  theme_economist()
+
+##Add a scientific scale
+ggplot(car_prices, aes(Price, Mileage, color = as.factor(Cylinder)))+
+  geom_point()+
+  scale_color_nejm()+
+  theme_wsj()+
+  labs(color = 'Cylinder)')
