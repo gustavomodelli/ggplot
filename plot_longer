@@ -1,0 +1,15 @@
+library(tidyverse)
+
+data("mtcars")
+str(mtcars)
+
+mtcars$id <- nrow(mtcars)
+
+mtcars %>% pivot_longer(
+  cols = -id,
+  names_to = 'vars',
+  values_to = 'num'
+) %>% 
+  ggplot(aes(num, fill = vars))+
+  geom_histogram()+
+  facet_wrap(~ vars, scales = 'free')
