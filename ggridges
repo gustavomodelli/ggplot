@@ -1,0 +1,172 @@
+library(tidyverse)
+library(tidymodels)
+library(textrecipes)
+library(wordcloud)
+library(vip)
+library(DALEXtra)
+library(ggridges)
+
+
+ikea <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-11-03/ikea.csv')
+dim(ikea)
+
+ikea <- ikea %>% 
+  select(-X1, -item_id, -link)
+
+##Clean shot description
+ikea <- ikea %>% 
+  mutate(
+    short_description = str_remove_all(short_description, '[:number:]|cm|[x$]|[:punct:]')
+  )
+
+stop <- c('and','mm')
+
+##Tranform the outcome
+ikea <- ikea %>% 
+  mutate(
+    price = log(price)
+  )
+
+##Tolenization n-gram
+rec <- recipe(~ short_description, data = ikea) %>% 
+  step_tokenize(short_description) %>% 
+  step_stopwords(short_description) %>% 
+  step_stopwords(short_description, custom_stopword_source = stop) %>% 
+  step_ngram(short_description, num_tokens = 3, min_num_tokens = 1) %>% 
+  step_tokenfilter(short_description, max_tokens = 100) %>% 
+  step_tf(short_description)
+
+new <- rec %>% prep() %>% juice()
+
+word_cloud <- new %>% 
+  pivot_longer(
+    cols = contains('tf_short_description')
+  ) %>% 
+  group_by(name) %>% 
+  count(value) %>% 
+  filter(value == 1) %>% 
+  mutate(name = str_remove(name, 'tf_short_description_'))
+
+wordcloud(words = word_cloud$name, freq = word_cloud$n)
+
+
+##Category
+ggplot(ikea, aes(reorder(category, price), price, fill = category))+
+  geom_jitter(alpha = 0.1, width = 0.2, fill ='white')+
+  geom_boxplot(width = 0.2)+
+  theme(legend.position = 'none')+
+  coord_flip()
+
+##Using ggridges
+ggplot(ikea, aes(price, category))+
+  geom_density_ridges()
+
+##Retangule
+ikea %>% 
+  mutate(category = fct_lump(category, 5)) %>% 
+  ggplot(aes(xmin = 0, ymin = 0, xmax = width, ymax = height, fill = category))+
+  geom_rect(alpha = 0.05, size = 1)+
+  facet_wrap(~ category)+
+  theme(legend.position = 'none')+
+  guides(colour=FALSE)+
+  coord_fixed()
+
+##Price
+ggplot(ikea, aes(log(price)))+
+  geom_histogram(fill = 'red')
+
+##Test a new variable
+ikea %>% 
+  mutate(dimension = depth * height * width) %>% 
+  ggplot(aes(dimension, price))+
+  geom_point()
+
+
+##--- Fit a model
+split <- initial_split(ikea, strata = 'price')
+ikea_train <- training(split)
+ikea_test <- testing(split)
+
+
+##--- recipe --------------------------------------
+rec_lasso <- recipe(price ~ . , data = ikea_train) %>%
+  step_medianimpute(depth, height, width) %>% 
+  step_mutate(dimension = depth * height * width) %>% ##creates dimension
+  step_rm(name, old_price, designer, depth, height, width) %>% 
+  step_mutate(sellable_online = as.factor(sellable_online)) %>% 
+  step_tokenize(short_description) %>% 
+  step_stopwords(short_description) %>% 
+  step_stopwords(short_description, custom_stopword_source = stop) %>% 
+  step_ngram(short_description, num_tokens = 3, min_num_tokens = 1) %>% 
+  step_tokenfilter(short_description, max_tokens = 100) %>% 
+  step_tfidf(short_description) %>% 
+  step_dummy(all_nominal())
+
+## --- Model ----------------------------------------
+
+model_lasso <- linear_reg(mixture = tune(), penalty = tune()) %>%
+  set_engine('glmnet')
+
+## ---- Workflow --------------------------------------
+
+work_lasso <- workflow() %>% 
+  add_recipe(rec_lasso) %>% 
+  add_model(model_lasso)
+
+## -- folds -------------------------------------------
+
+folds <- vfold_cv(ikea_train, strata = 'price')
+
+## -- Tune ---------------------------------------------
+
+doParallel::registerDoParallel()
+
+tune_lasso <- tune_grid(
+  work_lasso,
+  grid = 10,
+  resamples = folds,
+  metrics = metric_set(rmse, rsq),
+  control = control_grid(pkgs = c('textrecipes'))
+)
+
+
+## --  Evaluate ---------------------------------------
+
+show_best(tune_lasso)
+best_lasso <- select_best(tune_lasso)
+
+test01 <- work_lasso %>% 
+  finalize_workflow(best_lasso) %>% 
+  last_fit(split)
+
+test01 %>% collect_metrics()
+test01 %>% collect_predictions() %>% 
+  ggplot(aes(.pred, price))+
+  geom_point()
+
+
+## --- Final --------------------------------------
+
+final_lasso <- work_lasso %>% 
+  finalize_workflow(best_lasso) %>% 
+  fit(ikea_train)
+
+final_lasso %>% pull_workflow_fit() %>% vi() %>% 
+  mutate(Variable = str_remove(Variable, 'tfidf_short_description_')) %>% 
+  ggplot(aes(reorder(Variable, Importance), Importance, fill = Sign))+
+  geom_col()+
+  theme(legend.position = 'none')+
+  coord_flip()
+
+## Using Dalex -----------------------------------
+
+explain_lasso <- explain_tidymodels(final_lasso, data = ikea_test %>% select(-price),
+                                    y = ikea_test$price, label = 'elasticNet')
+
+##VarImpot
+lasso_imp <- feature_importance(explain_lasso)
+plot(lasso_imp)
+
+##PartialPlot
+lasso_part <- model_profile(explain_lasso, variables = c('category'))
+plot(lasso_part)
