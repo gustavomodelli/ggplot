@@ -1,0 +1,36 @@
+library(tidyverse)
+library(plotly)
+
+
+##Example mtcars
+data(mtcars)
+head(mtcars)
+
+
+ggplot(mtcars, aes(hp, mpg, size = as.factor(cyl), color = as.factor(am)))+
+  geom_point()
+
+##Transform in ploty
+p1 <- ggplot(mtcars, aes(hp, mpg, size = as.factor(cyl), color = as.factor(am)))+
+  geom_point()
+
+plotly::ggplotly(p1)
+
+
+##animated plot
+p2 <- ggplot(mtcars, aes(hp, mpg, frame = as.factor(cyl), color = as.factor(am)))+
+  geom_point()
+
+plotly::ggplotly(p2)
+
+
+## add a frame to animated the plot
+
+##Options
+p2 <- p2 %>% 
+  animation_opts(
+    1000, easing = "elastic", redraw = FALSE
+  )
+
+
+plotly::ggplotly(p2)
