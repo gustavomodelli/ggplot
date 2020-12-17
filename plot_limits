@@ -1,0 +1,16 @@
+library(tidyverse)
+library(tidymodels)
+
+
+##Load Data
+bank <- read_csv('BankNote_Authentication.csv')
+bank %>% str()
+summary(bank)
+
+bank <- bank %>% 
+  mutate(class = factor(class))
+
+ggplot(bank, aes(variance, fill = class))+
+  geom_density(alpha = 0.5)+
+  scale_x_continuous(breaks = c(-8:8), limits = c(-10,10))+
+  theme_light()
