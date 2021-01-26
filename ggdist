@@ -1,0 +1,25 @@
+library(tidyverse)
+library(ggdist)
+
+
+df <- data.frame(
+  group = c('a','b','c'),
+  value = rnorm(3000, mean = c(1,2,3), sd = c(1, 1.5, 1))
+)
+df %>% head()
+
+
+##Normal plot
+ggplot(df, aes(group, value, fill = group))+
+  geom_boxplot()
+
+
+##Use ggdist
+ggplot(df, aes(group, value, fill = group))+
+  stat_halfeye()+
+  coord_flip()
+
+
+ggplot(df, aes(group, value, fill = group))+
+  stat_eye()+
+  coord_flip()
