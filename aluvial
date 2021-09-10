@@ -1,0 +1,30 @@
+library(tidyverse)
+library(palmerpenguins)
+library(ggalluvial)
+
+peng <- palmerpenguins::penguins
+peng %>% str()
+
+theme_set(theme_bw())
+
+
+## Tree levels
+peng %>% 
+  group_by(island, sex) %>% 
+  count(species) %>% 
+  ggplot(aes(axis1 = island, axis2 = sex, axis3 = species, y = n))+
+  geom_alluvium(aes(fill = species))+
+  geom_stratum()+
+  geom_text(stat = "stratum", aes(label = after_stat(stratum)))+
+  scale_x_discrete(limits = c("Island", "Sex", "Specie"), expand = c(.2, .05))
+
+
+## Only two levels
+peng %>% 
+  group_by(island) %>% 
+  count(species) %>% 
+  ggplot(aes(axis1 = island,axis3 = species, y = n))+
+  geom_alluvium(aes(fill = species))+
+  geom_stratum()+
+  geom_text(stat = "stratum", aes(label = after_stat(stratum)))+
+  scale_x_discrete(limits = c("Island", "Specie"), expand = c(.2, .05))
