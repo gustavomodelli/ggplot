@@ -1,0 +1,38 @@
+library(tidyverse)
+
+
+data <- data.frame(
+  group = c(rep('A', 500), rep('B', 500), rep('C', 500)),
+  value = c(rnorm(500, 10, 2), rnorm(500, 12, 1.5), rnorm(500, 17, 2.5))
+)
+
+
+##Plot data and points
+theme_set(theme_bw())
+
+data %>% 
+  ggplot(aes(group, value, fill = group))+
+  geom_boxplot(outlier.color = NA)+
+  geom_jitter(alpha = .5, width = .2)
+
+data %>% 
+  ggplot(aes(group, value, color = group))+
+  geom_boxplot(outlier.color = NA)+
+  geom_jitter(alpha = .5, width = .2)
+
+data %>% 
+  ggplot(aes(group, value, color = group))+
+  geom_boxplot(outlier.color = NA, notch = TRUE)+
+  geom_jitter(alpha = .5, width = .2)
+
+data %>% 
+  ggplot(aes(group, value, color = group))+
+  geom_violin(width = .50)+
+  geom_boxplot(width = .15, outlier.colour = NA)+
+  geom_jitter(alpha = .15, width = .15)
+
+
+data %>% 
+  ggplot(aes(group, value, color = group))+
+  geom_violin(width = .50, draw_quantiles = c(0.25, 0.50, 0.75))+
+  geom_jitter(alpha = .25, width = .15)
