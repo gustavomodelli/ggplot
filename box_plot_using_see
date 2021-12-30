@@ -15,7 +15,10 @@ data %>%
   ggplot(aes(group, age, color = group))+
   geom_boxplot(width = 0.5)+
   geom_jitter(width = 0.15, alpha = 0.5)+
-  scale_color_jama()
+  geom_violinhalf(aes(fill = group), alpha = .50)+
+  scale_color_jama()+
+  scale_fill_jama()+
+  theme(legend.position = 'none')
 
 ## BoxPlot and Violim and Dop
 data %>% 
@@ -31,3 +34,4 @@ data %>%
   geom_violindot()+
   theme_modern()+
   scale_fill_material_d()
+
