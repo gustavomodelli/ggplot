@@ -1,0 +1,33 @@
+library(tidyverse)
+library(see)
+library(ggsci)
+
+## data
+data <- data.frame(
+  id = 1:500,
+  group = c(rep('A',250), rep('B', 250)),
+  age = c(rnorm(250, 50, 5), rnorm(250, 60, 6))
+)
+
+
+## Plot BoxPlot + Dot 
+data %>% 
+  ggplot(aes(group, age, color = group))+
+  geom_boxplot(width = 0.5)+
+  geom_jitter(width = 0.15, alpha = 0.5)+
+  scale_color_jama()
+
+## BoxPlot and Violim and Dop
+data %>% 
+  ggplot(aes(group, age, color = group))+
+  geom_violin(width = 0.5)+
+  geom_boxplot(width = 0.25)+
+  geom_jitter(width = 0.15, alpha = 0.5)+
+  scale_color_jama()
+
+## Using see
+data %>% 
+  ggplot(aes(group, age, fill = group))+
+  geom_violindot()+
+  theme_modern()+
+  scale_fill_material_d()
