@@ -1,0 +1,116 @@
+library(tidyverse)
+library(ggsci)
+library(cowplot)
+
+## Code OR or HR plot
+data <- data.frame(
+  group = c(rep(c('CNi-AZA','CNi-MPAA','CNi-mTORi'), 3)),
+  status = c(rep('Hospitalization', 3), rep('ICU requirement', 3), rep('Mechanical Ventilation', 3)),
+  aHR = c(0, 1.44, 0.65, 0, 1.43, 0.56, 0, 1.12, 0.94),
+  aHR_low = c(0, 1.02, 0.37, 0, 1.06, 0.34, 0, 0.77, 0.52),
+  aHR_high = c(0, 2.04, 1.15, 0, 1.92, 0.93, 0, 1.63, 1.70)
+) %>% 
+  mutate(group = factor(group, levels = c('CNi-mTORi','CNi-MPAA','CNi-AZA')))
+
+
+data2 <- data.frame(
+  group = c(rep(c('CNi-AZA','CNi-MPAA','CNi-mTORi'), 3)),
+  status = c(rep('Hospitalization', 3), rep('ICU requirement', 3), rep('Mechanical Ventilation', 3)),
+  aHR = c(0, 1.23, 0.50, 0, 1.03, 0.59, 0, 0.95, 0.74),
+  aHR_low = c(0, 0.91, 0.30, 0, 0.77, 0.35, 0, 0.68, 0.43),
+  aHR_high = c(0, 1.67, 0.84, 0, 1.37, 0.98, 0, 1.33, 1.29)
+) %>% 
+  mutate(group = factor(group, levels = c('CNi-mTORi','CNi-MPAA','CNi-AZA')))
+
+
+
+## PLot
+theme_set(theme_bw())
+
+p1 <- data %>% 
+  ggplot(aes(y = group, x = aHR, color = group, fill = group))+
+  geom_point(shape = 22, size = 4)+
+  geom_errorbar(aes(xmin = aHR_low, xmax = aHR_high), width = .20)+
+  geom_vline(aes(xintercept = 1), linetype = "longdash", colour = "black")+
+  facet_wrap(~ status, ncol = 1)+
+  scale_fill_jco()+
+  scale_color_jco()+
+  scale_y_discrete(expand = c(0,1))+
+  theme(legend.position = 'none', axis.text = element_text(size = 12),
+        strip.text = element_text(size = 14))+
+  labs(x = 'Hazard Ratio (95% CI)', y = '', title = '30 days outcomes')
+
+p2 <- data2 %>% 
+  ggplot(aes(y = group, x = aHR, color = group, fill = group))+
+  geom_point(shape = 22, size = 4)+
+  geom_errorbar(aes(xmin = aHR_low, xmax = aHR_high), width = .20)+
+  geom_vline(aes(xintercept = 1), linetype = "longdash", colour = "black")+
+  facet_wrap(~ status, ncol = 1)+
+  scale_y_discrete(expand = c(0,1))+
+  scale_fill_jco()+
+  scale_color_jco()+
+  theme(legend.position = 'none',
+        axis.text = element_text(size = 12),
+        strip.text = element_text(size = 14))+
+  labs(x = 'Hazard Ratio (95% CI) ', y = '', title = '90 days outcomes')
+
+p3 <- cowplot::plot_grid(p1, p2)
+
+## plot without death
+ggsave(plot = p3, filename = 'HR_plot_outcomes.tiff', dpi = 300, compression = 'lzw',
+       units = 'cm', width = 25, height = 30)
+
+
+## Adding deat
+data <- data.frame(
+  group = c(rep(c('CNi-AZA','CNi-MPAA','CNi-mTORi'), 4)),
+  status = c(rep('Death', 3), rep('Hospitalization', 3), rep('ICU requirement', 3), rep('Mechanical Ventilation', 3)),
+  aHR = c(0, 1.7, 0.58, 0 , 1.44, 0.65, 0, 1.43, 0.56, 0, 1.12, 0.94),
+  aHR_low = c(0, 1.21, 0.45,   0, 1.02, 0.37, 0, 1.06, 0.34, 0, 0.77, 0.52),
+  aHR_high = c(0, 2.4, 1.35, 0, 2.04, 1.15, 0, 1.92, 0.93, 0, 1.63, 1.70)
+) %>% 
+  mutate(group = factor(group, levels = c('CNi-mTORi','CNi-MPAA','CNi-AZA')))
+
+
+data2 <- data.frame(
+  group = c(rep(c('CNi-AZA','CNi-MPAA','CNi-mTORi'), 4)),
+  status = c(rep('Death', 3), rep('Hospitalization', 3), rep('ICU requirement', 3), rep('Mechanical Ventilation', 3)),
+  aHR = c(0, 1.46, 0.59, 0, 1.23, 0.50, 0, 1.03, 0.59, 0, 0.95, 0.74),
+  aHR_low = c(0, 1.09, 0.35, 0, 0.91, 0.30, 0, 0.77, 0.35, 0, 0.68, 0.43),
+  aHR_high = c(0, 1.98, 0.97, 0, 1.67, 0.84, 0, 1.37, 0.98, 0, 1.33, 1.29)
+) %>% 
+  mutate(group = factor(group, levels = c('CNi-mTORi','CNi-MPAA','CNi-AZA')))
+
+
+p1 <- data %>% 
+  ggplot(aes(y = group, x = aHR, color = group, fill = group))+
+  geom_point(shape = 22, size = 4)+
+  geom_errorbar(aes(xmin = aHR_low, xmax = aHR_high), width = .20)+
+  geom_vline(aes(xintercept = 1), linetype = "longdash", colour = "black")+
+  facet_wrap(~ status, ncol = 1)+
+  scale_fill_jco()+
+  scale_color_jco()+
+  scale_y_discrete(expand = c(0,1))+
+  theme(legend.position = 'none', axis.text = element_text(size = 12),
+        strip.text = element_text(size = 14))+
+  labs(x = 'Hazard Ratio (95% CI)', y = '', title = '30 days outcomes')
+
+p2 <- data2 %>% 
+  ggplot(aes(y = group, x = aHR, color = group, fill = group))+
+  geom_point(shape = 22, size = 4)+
+  geom_errorbar(aes(xmin = aHR_low, xmax = aHR_high), width = .20)+
+  geom_vline(aes(xintercept = 1), linetype = "longdash", colour = "black")+
+  facet_wrap(~ status, ncol = 1)+
+  scale_y_discrete(expand = c(0,1))+
+  scale_fill_jco()+
+  scale_color_jco()+
+  theme(legend.position = 'none',
+        axis.text = element_text(size = 12),
+        strip.text = element_text(size = 14))+
+  labs(x = 'Hazard Ratio (95% CI) ', y = '', title = '90 days outcomes')
+
+p3 <- cowplot::plot_grid(p1, p2)p3
+
+ggsave(plot = p3, filename = 'HR_plot_outcomes2.tiff', dpi = 300, compression = 'lzw',
+       units = 'cm', width = 25, height = 30)
+
