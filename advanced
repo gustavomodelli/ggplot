@@ -1,0 +1,86 @@
+library(tidyverse)
+library(cowplot)
+library(corrplot)
+library(GGally)
+
+##data
+mcu <- read_csv('mcu_box_office.csv')
+
+
+## function to arrage date
+mcu <- mcu %>% 
+  mutate(day = str_split(release_date, pattern = '/', simplify = TRUE)[,1],
+         month = str_split(release_date, pattern = '/', simplify = TRUE)[,2],
+         year =  str_split(release_date, pattern = '/', simplify = TRUE)[,3]
+         )
+
+## cor 
+mcu %>% 
+  ggplot(aes(audience_score, tomato_meter))+
+  geom_point(size = 1.5, color = 'midnightblue')
+
+cor.test(mcu$tomato_meter, mcu$audience_score, method = 'spearman')
+
+## best for tomato score
+theme_set(theme_bw())
+
+p1 <- mcu %>% 
+  group_by(movie_title) %>% 
+  summarise(tomato_meter = sum(tomato_meter)) %>% 
+  arrange(desc(tomato_meter)) %>% 
+  ggplot(aes(tomato_meter, reorder(movie_title, tomato_meter)))+
+  geom_col(fill = 'tomato')+
+  geom_vline(xintercept = 83, linetype = 'dashed')+
+  labs(x = 'Tomato Meter', y = '', title = 'Tomato Score', subtitle = 'Marvel Movies')
+
+
+p2 <- mcu %>% 
+  group_by(movie_title) %>% 
+  summarise(audience_score = sum(audience_score)) %>% 
+  ggplot(aes(audience_score, reorder(movie_title, audience_score)))+
+  geom_col(fill = 'midnightblue')+
+  geom_vline(xintercept = 87, linetype = 'dashed')+
+  labs(x = 'Audience Score', y = '', title = 'Audience Score', subtitle = 'Marvel Movies')
+
+
+cowplot::plot_grid(p1, p2)
+
+mcu %>% 
+  select(where(is.numeric)) %>% 
+  cor() %>% 
+  corrplot(method = 'number', type = 'upper')
+
+
+## plot
+mcu %>% 
+  ggplot(aes(y = reorder(movie_title, tomato_meter)))+
+  geom_point(aes(x = tomato_meter), color = 'tomato', size = 2)+
+  geom_point(aes(x = audience_score), color = 'midnightblue', size = 2)+
+  geom_segment(aes(x = tomato_meter, xend = audience_score, yend = movie_title), color = 'gray')+
+  labs(x = 'Score', y = '', title = 'Score Marvel Movies', caption = 'Red: Tomato Score;  Blue: Audience Score')
+
+
+##ggaly
+mcu %>% 
+  select(-movie_title, -mcu_phase, -release_date) %>% 
+  ggpairs()
+
+## budjet by year
+ 
+ggplot(mcu, aes(year, production_budget))+
+  geom_point(size = 1.5, color = 'tomato')+
+  geom_text(data = mcu %>% filter(production_budget > 250000000), aes(label = movie_title), vjust = 1)+
+  scale_y_continuous(labels = scales::dollar_format())+
+  theme(axis.text = element_text(size = 12, face = 'bold'),
+        axis.title = element_text(size = 12, face = 'bold')
+        )
+
+# Tile Plot
+mcu %>% 
+  mutate(year = factor(year)) %>% 
+  group_by(year, movie_title, production_budget) %>% 
+  ggplot(aes(x = year, y = movie_title, fill = production_budget))+
+  geom_tile()+
+  geom_text(aes(label = audience_score), hjust = 0)+
+  scale_fill_gradient(low = 'yellow', high = 'red')+
+  labs(y = '', caption = '(n) Audience Score')
